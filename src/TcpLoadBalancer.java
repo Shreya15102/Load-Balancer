@@ -1,28 +1,36 @@
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.io.*;
 import java.net.Socket;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 public class TcpLoadBalancer {
 
      private final int listenPort;
-     private final String backendHost;
-     private final int backendPort;
+     private final List<InetSocketAddress> backendServers;
+     private final AtomicInteger rIndex = new AtomicInteger(0);
 
-     public TcpLoadBalancer(int listenPort, String backendHost, int backendPort) {
+     private final ExecutorService workerPool = Executors.newFixedThreadPool(50);
+
+     public TcpLoadBalancer(int listenPort, List<InetSocketAddress>backendServers) {
          this.listenPort = listenPort;
-         this.backendHost = backendHost;
-         this.backendPort = backendPort;
+         this.backendServers = backendServers;
      }
 
      public void start(){
          try (ServerSocket serverSocket = new ServerSocket(listenPort)){
 
-             System.out.println("Server Listening on port " + listenPort);
+             System.out.println("Load Balancer Listening on port " + listenPort);
              while(true){
                   Socket clientSocket = serverSocket.accept();
+                  clientSocket.setSoTimeout(5000);
                   System.out.println("Accepted client connection from " + clientSocket.getInetAddress().getHostName());
-                  new Thread(new ConnectionHandler(clientSocket, this.backendHost, this.backendPort)).start();
+                  InetSocketAddress backend = getNextBackend();
+                  workerPool.submit(new ConnectionHandler(clientSocket, backend.getHostName(), backend.getPort()));
              }
          }
          catch(Exception e){
@@ -31,8 +39,18 @@ public class TcpLoadBalancer {
 
      }
 
+     private InetSocketAddress getNextBackend(){
+         int index = rIndex.getAndIncrement() % backendServers.size();
+         System.out.println("New Backend Server: " + backendServers.get(index));
+         return backendServers.get(index);
+     }
+
      public static void main(String[] args){
-         TcpLoadBalancer lb = new TcpLoadBalancer(9000, "localhost", 9001);
+         List<InetSocketAddress> backendServers = List.of(
+                 new InetSocketAddress("localhost", 9001),
+                 new InetSocketAddress("localhost", 9002)
+                 );
+         TcpLoadBalancer lb = new TcpLoadBalancer(9000, backendServers);
          lb.start();
      }
 

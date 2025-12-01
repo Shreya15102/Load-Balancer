@@ -16,6 +16,7 @@ public class ConnectionHandler implements Runnable {
     @Override
     public void run(){
         try (Socket backendSocket = new Socket(backendHost, backendPort)){
+            System.out.println(clientSocket.getInetAddress().getHostName());
               Thread t1 = new Thread(new StreamForwarder(
                       clientSocket.getInputStream(),
                       backendSocket.getOutputStream(),

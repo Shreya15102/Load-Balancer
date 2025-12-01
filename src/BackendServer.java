@@ -3,8 +3,9 @@ import java.net.*;
 
 public class BackendServer {
     public static void main(String[] args) throws Exception {
-        ServerSocket ss = new ServerSocket(9001);
-        System.out.println("Backend running on port 9001");
+        int port = Integer.parseInt(args[0]);
+        ServerSocket ss = new ServerSocket(port);
+        System.out.println("Backend running on port: " + port);
 
         while (true) {
             Socket s = ss.accept();
