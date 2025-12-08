@@ -4,30 +4,42 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class BackendRegistry {
 
-    private final Map<InetSocketAddress, Boolean>backends = new ConcurrentHashMap<>();
+    private final Map<InetSocketAddress, Boolean> healthMap = new ConcurrentHashMap<>();
+    private final Map<InetSocketAddress, Integer> activeConnections = new ConcurrentHashMap<>();
+
     public void addBackend(String host, int port){
-        backends.put(new InetSocketAddress(host, port), true);
+        InetSocketAddress address = new InetSocketAddress(host, port);
+        healthMap.put(address, true);
+        activeConnections.put(address, 0);
     }
 
     public List<InetSocketAddress> getHealthyBackends(){
           List<InetSocketAddress>healthyBackends = new ArrayList<>();
-          for(InetSocketAddress server: backends.keySet()){
-              if(backends.get(server)) healthyBackends.add(server);
+          for(InetSocketAddress server: healthMap.keySet()){
+              if(healthMap.get(server)) healthyBackends.add(server);
           }
           return healthyBackends;
     }
 
-    public void setHealthyStatus(InetSocketAddress backend, Boolean healthyStatus){
-        if(backends.containsKey(backend)){
-            backends.put(backend, healthyStatus);
-        }
+    public void markHealthy(InetSocketAddress address){
+        healthMap.put(address, true);
     }
 
-    public Boolean isHealthy(InetSocketAddress backend){
-            return backends.getOrDefault(backend, false);
+    public void markUnhealthy(InetSocketAddress address){
+        healthMap.put(address, false);
     }
 
-    public Set<InetSocketAddress> getAllBackends(){
-        return backends.keySet();
+    public void incrementActiveConnections(InetSocketAddress address){
+            activeConnections.compute(address, (k,v) -> v + 1);
     }
+
+    public void decrementActiveConnections(InetSocketAddress address){
+        activeConnections.compute(address, (k,v) -> v - 1);
+    }
+
+    public Integer getActiveConnections(InetSocketAddress address){
+        return activeConnections.getOrDefault(address, 0);
+    }
+
+
 }

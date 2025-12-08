@@ -4,15 +4,17 @@ import java.net.*;
 public class ConnectionHandler implements Runnable {
     private final Socket clientSocket;
     private final InetSocketAddress backend;
+    private final BackendRegistry registry;
 
-
-    public ConnectionHandler(Socket clientSocket, InetSocketAddress backend) {
+    public ConnectionHandler(Socket clientSocket, InetSocketAddress backend, BackendRegistry registry) {
         this.clientSocket = clientSocket;
         this.backend = backend;
+        this.registry = registry;
     }
 
     @Override
     public void run(){
+        registry.incrementActiveConnections(backend);
         try (Socket backendSocket = new Socket(backend.getHostName(), backend.getPort())){
             System.out.println(clientSocket.getInetAddress().getHostName());
               Thread t1 = new Thread(new StreamForwarder(
@@ -35,6 +37,7 @@ public class ConnectionHandler implements Runnable {
             System.out.println("Connection Error: " + e.getMessage());
         }
         finally{
+            registry.decrementActiveConnections(backend);
             try{ clientSocket.close(); } catch(IOException ignored){}
         }
     }

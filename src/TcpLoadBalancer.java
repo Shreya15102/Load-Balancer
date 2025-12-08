@@ -39,9 +39,9 @@ public class TcpLoadBalancer {
                       continue;
                   }
                   System.out.println("Accepted client connection from " + clientSocket.getInetAddress().getHostName());
-                  InetSocketAddress backend = this.strategy.selectBackend(healthyBackends);
+                  InetSocketAddress backend = this.strategy.selectBackend(registry);
                   System.out.println("Routing to backend: " + backend);
-                  workerPool.submit(new ConnectionHandler(clientSocket, backend));
+                  workerPool.submit(new ConnectionHandler(clientSocket, backend, registry));
              }
 
          }

@@ -6,10 +6,10 @@ public class RoundRobinStrategy implements LoadBalancerStrategy{
 
      private final AtomicInteger counter = new AtomicInteger(0);
 
-
      @Override
-     public InetSocketAddress selectBackend(List<InetSocketAddress> backends){
-         if(backends.isEmpty())return null;
-         return backends.get(Math.floorMod(counter.getAndIncrement(), backends.size()));
+     public InetSocketAddress selectBackend(BackendRegistry registry){
+         List<InetSocketAddress>healthyBackends = registry.getHealthyBackends();
+         if(healthyBackends.isEmpty())return null;
+         return healthyBackends.get(Math.floorMod(counter.getAndIncrement(), healthyBackends.size()));
      }
 }
