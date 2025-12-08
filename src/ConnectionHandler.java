@@ -3,19 +3,17 @@ import java.net.*;
 
 public class ConnectionHandler implements Runnable {
     private final Socket clientSocket;
-    private final String backendHost;
-    private final int backendPort;
+    private final InetSocketAddress backend;
 
 
-    public ConnectionHandler(Socket clientSocket, String backendHost, int backendPort) {
+    public ConnectionHandler(Socket clientSocket, InetSocketAddress backend) {
         this.clientSocket = clientSocket;
-        this.backendHost = backendHost;
-        this.backendPort = backendPort;
+        this.backend = backend;
     }
 
     @Override
     public void run(){
-        try (Socket backendSocket = new Socket(backendHost, backendPort)){
+        try (Socket backendSocket = new Socket(backend.getHostName(), backend.getPort())){
             System.out.println(clientSocket.getInetAddress().getHostName());
               Thread t1 = new Thread(new StreamForwarder(
                       clientSocket.getInputStream(),
