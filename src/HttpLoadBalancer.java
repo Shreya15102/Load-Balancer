@@ -29,7 +29,8 @@ public class HttpLoadBalancer{
         hc.start();
         HttpServer server = HttpServer.create(new InetSocketAddress(listenPort), 0);
         server.createContext("/", new ProxyHandler());
-        server.setExecutor(null);
+        ExecutorService executor = Executors.newFixedThreadPool(50);
+        server.setExecutor(executor);
         server.start();
       }    
 
@@ -78,6 +79,8 @@ public class HttpLoadBalancer{
             conn.setRequestMethod(method);
             conn.setInstanceFollowRedirects(false);
             conn.setDoInput(true);
+            conn.setConnectTimeout(2000);
+            conn.setReadTimeout(5000);
 
             for(Map.Entry<String, List<String>> header: clientExchange.getRequestHeaders().entrySet()){
                 String name = header.getKey();
@@ -90,6 +93,7 @@ public class HttpLoadBalancer{
 
             if("POST".equalsIgnoreCase(method) || "PUT".equalsIgnoreCase(method) || "PATCH".equalsIgnoreCase(method)){
                 conn.setDoOutput(true);
+                conn.setChunkedStreamingMode(8192);
                 try (InputStream is = clientExchange.getRequestBody();
                     OutputStream os = conn.getOutputStream()){
                         copyStream(is, os);
@@ -141,7 +145,7 @@ public class HttpLoadBalancer{
         registry.addBackend("localhost", 9001);
         registry.addBackend("localhost", 9002);
         registry.addBackend("localhost", 9003);
-        LoadBalancerStrategy strategy = new RoundRobinStrategy();
+        LoadBalancerStrategy strategy = LoadBalancingStrategyFactory.getStrategyFromName("RoundRobin");
         HttpLoadBalancer lb = new HttpLoadBalancer(8081, registry, strategy);
         lb.start();
     }

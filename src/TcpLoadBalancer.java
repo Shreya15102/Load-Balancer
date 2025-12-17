@@ -57,7 +57,7 @@ public class TcpLoadBalancer {
          registry.addBackend("localhost", 9001);
          registry.addBackend("localhost", 9002);
          registry.addBackend("localhost", 9003);
-         LoadBalancerStrategy strategy = new RoundRobinStrategy();
+         LoadBalancerStrategy strategy = LoadBalancingStrategyFactory.getStrategyFromName("RoundRobin");
          TcpLoadBalancer lb = new TcpLoadBalancer(9000, registry, strategy, 50);
          lb.start();
      }
