@@ -5,7 +5,6 @@ import java.net.Socket;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
 
 
 public class TcpLoadBalancer {
@@ -15,9 +14,10 @@ public class TcpLoadBalancer {
      private LoadBalancerStrategy strategy;
      private final ExecutorService workerPool;
 
-     public TcpLoadBalancer(int listenPort, BackendRegistry registry, int workerThreads) {
+     public TcpLoadBalancer(int listenPort, BackendRegistry registry, LoadBalancerStrategy strategy, int workerThreads) {
          this.listenPort = listenPort;
          this.registry = registry;
+         this.strategy = strategy;
          this.workerPool = Executors.newFixedThreadPool(workerThreads);
      }
 
@@ -51,19 +51,14 @@ public class TcpLoadBalancer {
 
      }
 
-     private void setStrategy(LoadBalancerStrategy strategy){
-          this.strategy = strategy;
-     }
-
 
      public static void main(String[] args){
          BackendRegistry registry = new BackendRegistry();
          registry.addBackend("localhost", 9001);
          registry.addBackend("localhost", 9002);
          registry.addBackend("localhost", 9003);
-         TcpLoadBalancer lb = new TcpLoadBalancer(9000, registry, 50);
          LoadBalancerStrategy strategy = new RoundRobinStrategy();
-         lb.setStrategy(strategy);
+         TcpLoadBalancer lb = new TcpLoadBalancer(9000, registry, strategy, 50);
          lb.start();
      }
 

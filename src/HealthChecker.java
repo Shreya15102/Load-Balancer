@@ -18,7 +18,10 @@ public class HealthChecker implements Runnable{
             try{
                 for(InetSocketAddress backend: registry.getAllBackends()){
                     Boolean isAlive = isBackendAlive(backend);
-                    registry.setHealthyStatus(backend, isAlive);
+                    if (isAlive)
+                        registry.markHealthy(backend);
+                    else
+                        registry.markUnhealthy(backend);
                     System.out.println("Health Check: " + backend + " is " + (isAlive ? "UP" : "DOWN"));
                 }
                 Thread.sleep(interval);

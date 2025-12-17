@@ -7,7 +7,7 @@ public class BackendRegistry {
     private final Map<InetSocketAddress, Boolean> healthMap = new ConcurrentHashMap<>();
     private final Map<InetSocketAddress, Integer> activeConnections = new ConcurrentHashMap<>();
 
-    public void addBackend(String host, int port){
+    public synchronized void addBackend(String host, int port){
         InetSocketAddress address = new InetSocketAddress(host, port);
         healthMap.put(address, true);
         activeConnections.put(address, 0);
@@ -30,15 +30,25 @@ public class BackendRegistry {
     }
 
     public void incrementActiveConnections(InetSocketAddress address){
-            activeConnections.compute(address, (k,v) -> v + 1);
+            activeConnections.compute(address, (k,v) -> {
+                if(v == null) return 1;
+                return v + 1;
+            });
     }
 
     public void decrementActiveConnections(InetSocketAddress address){
-        activeConnections.compute(address, (k,v) -> v - 1);
+        activeConnections.compute(address, (k,v) -> {
+              if(v == null || v <= 1)return 0;
+              return v-1;
+        });
     }
 
     public Integer getActiveConnections(InetSocketAddress address){
         return activeConnections.getOrDefault(address, 0);
+    }
+
+    public List<InetSocketAddress> getAllBackends(){
+        return new ArrayList<>(healthMap.keySet());
     }
 
 
